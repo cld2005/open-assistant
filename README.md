@@ -2,4 +2,4 @@
 
 ## Dependency
 
-- Protocol Buffers v3.2.0
+- Protocol Buffers v3.5.0

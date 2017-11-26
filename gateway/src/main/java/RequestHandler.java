@@ -2,10 +2,13 @@ import app.AppDelegate;
 import app.AppManager;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import org.apache.commons.io.IOUtils;
+import protobuf.Communication;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.ByteBuffer;
 
 public class RequestHandler implements HttpHandler {
 
@@ -24,39 +27,57 @@ public class RequestHandler implements HttpHandler {
             return;
         }
 
-        exchange.getResponseSender().send("Nice, app is located at " + appDelegate.ip + ":" + appDelegate.port);
+        byte[] requestBody = getRequestBody(exchange);
+        Communication.Message message = Communication.Message.parseFrom(requestBody);
+        byte[] responseBody = forwardRequest(appDelegate, message);
+        if (responseBody == null) {
+            exchange.getResponseSender().send("APP RETURNS NOTHING");
+            return;
+        }
+        exchange.getResponseSender().send(ByteBuffer.wrap(responseBody));
 
     }
 
-    private String getRequestBody(HttpServerExchange exchange) {
+    private byte[] getRequestBody(HttpServerExchange exchange) throws IOException {
+        return IOUtils.toByteArray(exchange.getInputStream());
+    }
 
-        BufferedReader reader = null;
-        StringBuilder sb = new StringBuilder();
+    private byte[] forwardRequest(AppDelegate appDelegate, Communication.Message message) {
+
+        HttpURLConnection connection = null;
+
+        int contentLength = message.getSerializedSize();
 
         try {
-            exchange.startBlocking();
-            reader = new BufferedReader(new InputStreamReader(exchange.getInputStream()));
 
-            String line;
-            while((line = reader.readLine()) != null) {
-                sb.append(line)
-            }
-        } catch(IOException e) {
-            e.printStackTrace( );
+            // Initializes connection
+            URL url = new URL(appDelegate.ip);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Length", Integer.toString(contentLength));
+
+            // Forwards request
+            DataOutputStream wr = new DataOutputStream ( connection.getOutputStream());
+            wr.write(message.toByteArray());
+            wr.close();
+
+            // Reads response
+            InputStream is = connection.getInputStream();
+            return IOUtils.toByteArray(is);
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            return null;
+
         } finally {
-            if(reader != null) {
-                try {
-                    reader.close();
-                } catch(IOException e) {
-                    e.printStackTrace();
-                }
+
+            if (connection != null) {
+                connection.disconnect();
             }
+
         }
-        return sb.toString();
 
-    }
-
-    private void forwardRequest(AppDelegate appDelegate, Message message) {
     }
 
 }

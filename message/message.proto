@@ -1,6 +1,25 @@
 syntax = "proto3";
 
+option java_package = "protobuf";
+option java_outer_classname = "Communication";
+
 message Message {
-    string app_uuid = 1;
-    string payload = 2;
+
+    enum PayloadType {
+        TEXT = 0;
+        MEDIA = 1;
+        OPERATION = 2;
+    }
+
+    enum Direction {
+        USER2APP = 0;
+        APP2USER = 1;
+    }
+
+    string app_name = 1;
+    string user_name = 2;
+    Direction direction = 3;
+    PayloadType payload_type = 4;
+    string payload = 5;
+
 }
