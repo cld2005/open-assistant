@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message Message {
+    string app_uuid = 1;
+    string payload = 2;
+}
