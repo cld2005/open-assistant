@@ -8,7 +8,7 @@ On Open Assistant platform, an app is one individual virtual assistant developed
 
 ## Architecture
 
-![Architecture](docs/architecture.png)
+![Architecture](docs/architecture.png?raw=true "Architecture")
 
 There are three main parts provided by Open Assisent.
 
